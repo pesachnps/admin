@@ -30,8 +30,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ThemeProvider } from "./components/ThemeContext";
-import GlobalSearch from "./components/search/GlobalSearch";
+import { ThemeProvider } from "@/components/ThemeContext";
+import GlobalSearch from "@/components/search/GlobalSearch";
 
 const navigationItems = [
   {
