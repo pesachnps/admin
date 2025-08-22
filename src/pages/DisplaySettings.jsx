@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import _ from "lodash";
+import { logActivity } from '../components/activityLogger'; // Changed path as requested
 
 const defaultSettings = {
   defaultScreenSize: "desktop",
@@ -115,6 +116,15 @@ export default function DisplaySettings() {
 
       // Update initialSettings to reflect the newly saved state
       setInitialSettings(settings);
+
+      // Log the activity
+      await logActivity(
+        'display_updated',
+        'Display settings updated',
+        `Updated display settings including breakpoints, layout dimensions, and responsive features`,
+        { updatedSettings: settings }
+      );
+
     } catch (error) {
       console.error('Error saving display settings:', error);
       // Optionally, revert settings or show an error message

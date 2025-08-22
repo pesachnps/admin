@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { motion } from "framer-motion";
 import _ from "lodash";
+import { logActivity } from '../components/activityLogger'; // Changed import path for activityLogger
 
 const defaultSettings = {
   security: {
@@ -131,6 +132,15 @@ export default function SystemSettings() {
       }
       await Promise.all(toCreate);
       setInitialSettings(settings); // Update initialSettings to reflect saved state
+      
+      // Log the activity
+      await logActivity(
+        'system_updated',
+        'System settings updated',
+        `Updated system configuration including security, notifications, and API settings`,
+        { updatedSettings: settings }
+      );
+      
     } catch(error) {
       console.error("Error saving system settings", error);
       // Optionally, revert settings or show an error message

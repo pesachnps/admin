@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { AdminSetting } from '@/api/entities';
 import _ from 'lodash';
+import { logActivity } from './activityLogger';
 
 const defaultSettings = {
   primaryColor: "#6366f1",
@@ -113,6 +114,15 @@ export function ThemeProvider({ children }) {
 
             await Promise.all(promises);
             setInitialSettings(settings);
+            
+            // Log the activity
+            await logActivity(
+                'theme_updated',
+                'Theme settings updated',
+                `Updated theme settings including colors, typography, and layout preferences`,
+                { updatedSettings: settings }
+            );
+            
         } catch (error) {
             console.error('Error saving settings:', error);
         }
@@ -227,6 +237,7 @@ export function ThemeProvider({ children }) {
                 --input: ${colors.input};
                 --ring: ${settings.primaryColor};
                 --radius: ${settings.borderRadius}px;
+                --spacing: ${settings.spacing}px;
                 
                 /* Sidebar specific colors */
                 --sidebar-background: ${sidebarColors.background};
@@ -352,6 +363,30 @@ export function ThemeProvider({ children }) {
             button[role="switch"] span {
                 background-color: hsl(var(--background)) !important;
                 border: 1px solid hsl(var(--border)) !important;
+            }
+
+            /* Dynamic spacing for main container */
+            .theme-spacing {
+                padding: calc(var(--spacing) * 1px);
+            }
+
+            .theme-spacing-sm {
+                padding: calc(var(--spacing) * 0.5px);
+            }
+
+            .theme-spacing-lg {
+                padding: calc(var(--spacing) * 1.5px);
+            }
+
+            /* Dynamic spacing for cards */
+            .theme-card-spacing {
+                padding: calc(var(--spacing) * 1px);
+                margin-bottom: calc(var(--spacing) * 1px);
+            }
+
+            /* Dynamic spacing for elements */
+            .theme-gap {
+                gap: calc(var(--spacing) * 0.5px);
             }
         `;
     }, [settings]);

@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { ActivityLog } from "@/api/entities";
 import { 
   Activity,
   User,
@@ -15,73 +16,62 @@ import {
   Globe
 } from "lucide-react";
 
-const activities = [
-  {
-    id: 1,
-    type: "user_registered",
-    title: "New user registered",
-    description: "john.doe@example.com joined the system",
-    time: "5 minutes ago",
-    icon: User,
-    color: "blue",
-    user_email: "john.doe@example.com",
-    ip_address: "192.168.1.45"
-  },
-  {
-    id: 2,
-    type: "theme_updated",
-    title: "Theme settings updated", 
-    description: "Primary color changed to indigo",
-    time: "1 hour ago",
-    icon: Palette,
-    color: "purple",
-    user_email: "admin@example.com",
-    ip_address: "10.0.0.12"
-  },
-  {
-    id: 3,
-    type: "security_scan",
-    title: "Security scan completed",
-    description: "All systems secure, no threats detected",
-    time: "2 hours ago",
-    icon: Shield,
-    color: "emerald",
-    user_email: "system@example.com",
-    ip_address: "127.0.0.1"
-  },
-  {
-    id: 4,
-    type: "display_updated",
-    title: "Display settings modified",
-    description: "Mobile breakpoint updated",
-    time: "4 hours ago",
-    icon: Monitor,
-    color: "orange",
-    user_email: "admin@example.com",
-    ip_address: "10.0.0.12"
-  },
-  {
-    id: 5,
-    type: "backup_created",
-    title: "System backup created",
-    description: "Automated backup completed successfully",
-    time: "6 hours ago",
-    icon: Settings,
-    color: "slate",
-    user_email: "system@example.com",
-    ip_address: "127.0.0.1"
-  }
-];
+const actionIcons = {
+  user_registered: User,
+  theme_updated: Palette,
+  display_updated: Monitor,
+  system_updated: Settings,
+  user_modified: User,
+  security_scan: Shield,
+  backup_created: Settings,
+  setting_changed: Settings
+};
 
 const colorClasses = {
-  blue: "text-blue-400 bg-blue-500/10 border-blue-500/20",
-  purple: "text-purple-400 bg-purple-500/10 border-purple-500/20",
-  emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
-  orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
-  slate: "text-slate-400 bg-slate-500/10 border-slate-500/20"
+  user_registered: "text-blue-400 bg-blue-500/10 border-blue-500/20",
+  theme_updated: "text-purple-400 bg-purple-500/10 border-purple-500/20",
+  display_updated: "text-orange-400 bg-orange-500/10 border-orange-500/20",
+  system_updated: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+  user_modified: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
+  security_scan: "text-red-400 bg-red-500/10 border-red-500/20",
+  backup_created: "text-green-400 bg-green-500/10 border-green-500/20",
+  setting_changed: "text-slate-400 bg-slate-500/10 border-slate-500/20"
 };
 
 export default function ActivityFeed() {
+  const [activities, setActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadRecentActivities();
+  }, []);
+
+  const loadRecentActivities = async () => {
+    setIsLoading(true);
+    try {
+      const recentActivities = await ActivityLog.list('-created_date', 5);
+      setActivities(recentActivities);
+    } catch (error) {
+      console.error('Error loading recent activities:', error);
+    }
+    setIsLoading(false);
+  };
+
+  const formatTime = (dateString) => {
+    const now = new Date();
+    const activityDate = new Date(dateString);
+    const diffInMinutes = Math.floor((now - activityDate) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minutes ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hours ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    return `${diffInDays} days ago`;
+  };
+
   return (
     <Card className="bg-card/30 border-border/50 backdrop-blur-xl">
       <CardHeader>
@@ -99,37 +89,62 @@ export default function ActivityFeed() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {activities.map((activity) => (
-            <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors duration-200">
-              <div className={`p-2 rounded-lg ${colorClasses[activity.color]} border`}>
-                <activity.icon className="w-4 h-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-start justify-between mb-1">
-                  <h4 className="font-medium text-foreground">{activity.title}</h4>
-                  <Badge variant="secondary" className="bg-muted/50 text-muted-foreground text-xs">
-                    {activity.type.replace('_', ' ')}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mb-2">{activity.description}</p>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                  <span>{activity.time}</span>
-                  {activity.user_email && (
-                    <div className="flex items-center gap-1">
-                      <User className="w-3 h-3" />
-                      <span>{activity.user_email}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center gap-1">
-                    <Globe className="w-3 h-3" />
-                    <code className="text-xs">{activity.ip_address}</code>
+        {isLoading ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="animate-pulse">
+                <div className="flex items-start gap-4 p-4 rounded-lg bg-secondary/20">
+                  <div className="w-8 h-8 bg-secondary rounded-lg"></div>
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 bg-secondary rounded w-3/4"></div>
+                    <div className="h-3 bg-secondary rounded w-1/2"></div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : activities.length > 0 ? (
+          <div className="space-y-4">
+            {activities.map((activity) => {
+              const Icon = actionIcons[activity.action_type] || Activity;
+              return (
+                <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-secondary/20 hover:bg-secondary/30 transition-colors duration-200">
+                  <div className={`p-2 rounded-lg ${colorClasses[activity.action_type]} border`}>
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between mb-1">
+                      <h4 className="font-medium text-foreground">{activity.title}</h4>
+                      <Badge variant="secondary" className="bg-muted/50 text-muted-foreground text-xs">
+                        {activity.action_type.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-2">{activity.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>{formatTime(activity.created_date)}</span>
+                      {activity.user_email && (
+                        <div className="flex items-center gap-1">
+                          <User className="w-3 h-3" />
+                          <span>{activity.user_name || activity.user_email}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-1">
+                        <Globe className="w-3 h-3" />
+                        <code className="text-xs">{activity.ip_address}</code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Activity className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+            <p className="text-muted-foreground">No recent activity</p>
+            <p className="text-sm text-muted-foreground/70">Activity will appear here when users perform actions</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

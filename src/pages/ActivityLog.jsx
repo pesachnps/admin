@@ -18,7 +18,11 @@ import {
   Monitor,
   Database,
   Globe,
-  Download
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -52,6 +56,8 @@ export default function ActivityLogPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedAction, setSelectedAction] = useState("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
 
   const months = [
     { value: "1", label: "January" },
@@ -77,12 +83,13 @@ export default function ActivityLogPage() {
 
   useEffect(() => {
     filterActivities();
+    setCurrentPage(1); // Reset to first page when filters change
   }, [activities, selectedYear, selectedMonth, searchTerm, selectedAction]);
 
   const loadActivities = async () => {
     setIsLoading(true);
     try {
-      const activityData = await ActivityLog.list('-created_date', 500);
+      const activityData = await ActivityLog.list('-created_date', 1000); // Increased limit
       setActivities(activityData);
     } catch (error) {
       console.error('Error loading activities:', error);
@@ -153,6 +160,17 @@ export default function ActivityLogPage() {
     });
   };
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentActivities = filteredActivities.slice(startIndex, endIndex);
+
+  const goToFirstPage = () => setCurrentPage(1);
+  const goToPreviousPage = () => setCurrentPage(prev => Math.max(prev - 1, 1));
+  const goToNextPage = () => setCurrentPage(prev => Math.min(prev + 1, totalPages));
+  const goToLastPage = () => setCurrentPage(totalPages);
+
   return (
     <div className="p-4 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -170,7 +188,7 @@ export default function ActivityLogPage() {
           </div>
           <div className="flex items-center gap-3">
             <Badge className="bg-indigo-500/10 text-indigo-400 border-indigo-500/20 px-4 py-2">
-              {filteredActivities.length} Activities
+              {filteredActivities.length} Total Activities
             </Badge>
             <Button 
               variant="outline" 
@@ -198,7 +216,7 @@ export default function ActivityLogPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
                 <div>
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">Year</label>
                   <Select value={selectedYear} onValueChange={setSelectedYear}>
@@ -249,6 +267,21 @@ export default function ActivityLogPage() {
                   </Select>
                 </div>
 
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">Items per page</label>
+                  <Select value={itemsPerPage.toString()} onValueChange={(value) => setItemsPerPage(Number(value))}>
+                    <SelectTrigger className="bg-secondary border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-popover border-border">
+                      <SelectItem value="10" className="text-foreground">10 per page</SelectItem>
+                      <SelectItem value="25" className="text-foreground">25 per page</SelectItem>
+                      <SelectItem value="50" className="text-foreground">50 per page</SelectItem>
+                      <SelectItem value="100" className="text-foreground">100 per page</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-muted-foreground mb-2 block">Search</label>
                   <div className="relative">
@@ -275,7 +308,7 @@ export default function ActivityLogPage() {
         >
           {isLoading ? (
             <div className="space-y-4">
-              {Array.from({ length: 8 }).map((_, i) => (
+              {Array.from({ length: itemsPerPage }).map((_, i) => (
                 <Card key={i} className="bg-card/30 border-border/50 backdrop-blur-xl">
                   <CardContent className="p-6">
                     <div className="animate-pulse space-y-3">
@@ -292,56 +325,112 @@ export default function ActivityLogPage() {
               ))}
             </div>
           ) : (
-            filteredActivities.map((activity, index) => {
-              const Icon = actionIcons[activity.action_type] || Activity;
-              return (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.03 }}
-                >
-                  <Card className="bg-card/30 border-border/50 backdrop-blur-xl hover:bg-card/40 transition-all duration-300">
-                    <CardContent className="p-6">
-                      <div className="flex items-start gap-4">
-                        <div className={`p-3 rounded-lg ${actionColors[activity.action_type]} border`}>
-                          <Icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between mb-2">
-                            <div>
-                              <h3 className="font-semibold text-foreground">{activity.title}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                            </div>
-                            <div className="text-right text-sm text-muted-foreground">
-                              <p>{formatDate(activity.created_date)}</p>
-                            </div>
+            <>
+              {currentActivities.map((activity, index) => {
+                const Icon = actionIcons[activity.action_type] || Activity;
+                return (
+                  <motion.div
+                    key={activity.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.03 }}
+                  >
+                    <Card className="bg-card/30 border-border/50 backdrop-blur-xl hover:bg-card/40 transition-all duration-300">
+                      <CardContent className="p-6">
+                        <div className="flex items-start gap-4">
+                          <div className={`p-3 rounded-lg ${actionColors[activity.action_type]} border`}>
+                            <Icon className="w-5 h-5" />
                           </div>
-                          
-                          <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
-                            {activity.user_email && (
-                              <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-foreground">{activity.user_name || activity.user_email}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between mb-2">
+                              <div>
+                                <h3 className="font-semibold text-foreground">{activity.title}</h3>
+                                <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
                               </div>
-                            )}
-                            <div className="flex items-center gap-2">
-                              <Globe className="w-4 h-4 text-muted-foreground" />
-                              <code className="px-2 py-1 bg-secondary rounded text-foreground font-mono text-xs">
-                                {activity.ip_address}
-                              </code>
+                              <div className="text-right text-sm text-muted-foreground">
+                                <p>{formatDate(activity.created_date)}</p>
+                              </div>
                             </div>
-                            <Badge className={`${actionColors[activity.action_type]} border text-xs`}>
-                              {activity.action_type.replace('_', ' ')}
-                            </Badge>
+                            
+                            <div className="flex flex-wrap items-center gap-4 mt-4 text-sm">
+                              {activity.user_email && (
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4 text-muted-foreground" />
+                                  <span className="text-foreground">{activity.user_name || activity.user_email}</span>
+                                </div>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <Globe className="w-4 h-4 text-muted-foreground" />
+                                <code className="px-2 py-1 bg-secondary rounded text-foreground font-mono text-xs">
+                                  {activity.ip_address}
+                                </code>
+                              </div>
+                              <Badge className={`${actionColors[activity.action_type]} border text-xs`}>
+                                {activity.action_type.replace('_', ' ')}
+                              </Badge>
+                            </div>
                           </div>
                         </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <Card className="bg-card/30 border-border/50 backdrop-blur-xl">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {startIndex + 1} to {Math.min(endIndex, filteredActivities.length)} of {filteredActivities.length} results
                       </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToFirstPage}
+                          disabled={currentPage === 1}
+                          className="border-border"
+                        >
+                          <ChevronsLeft className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToPreviousPage}
+                          disabled={currentPage === 1}
+                          className="border-border"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </Button>
+                        <div className="flex items-center gap-2 px-3 py-1 bg-secondary/50 rounded text-sm">
+                          Page {currentPage} of {totalPages}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToNextPage}
+                          disabled={currentPage === totalPages}
+                          className="border-border"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={goToLastPage}
+                          disabled={currentPage === totalPages}
+                          className="border-border"
+                        >
+                          <ChevronsRight className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
           )}
 
           {!isLoading && filteredActivities.length === 0 && (
