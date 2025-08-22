@@ -295,6 +295,26 @@ export function ThemeProvider({ children }) {
                 opacity: 1;
                 width: auto;
               }
+
+              /* Remove borders in hybrid mode */
+              div[data-side] > div:nth-child(2) { border: 0 !important; }
+              [data-sidebar-header], [data-sidebar-footer] { border: 0 !important; }
+              [data-sidebar] [data-sidebar="menu-sub"] { border: 0 !important; }
+
+              /* Center icons when collapsed (not hovered) */
+              [data-sidebar]:not(:hover) [data-sidebar-menu-button] {
+                justify-content: center !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+              }
+
+              /* Center header and footer content when collapsed */
+              [data-sidebar]:not(:hover) [data-sidebar-header] > div,
+              [data-sidebar]:not(:hover) [data-sidebar-footer] > div {
+                justify-content: center !important;
+              }
             ` : ''}
 
             /* Compact sidebar state */
@@ -310,6 +330,31 @@ export function ThemeProvider({ children }) {
               
               [data-sidebar] [data-sidebar-footer] .flex-1 {
                 display: none;
+              }
+
+              /* Remove borders in compact mode */
+              div[data-side] > div:nth-child(2) { border: 0 !important; }
+              [data-sidebar-header], [data-sidebar-footer] { border: 0 !important; }
+              [data-sidebar] [data-sidebar="menu-sub"] { border: 0 !important; }
+
+              /* Center icons in compact mode */
+              [data-sidebar] [data-sidebar-menu-button] {
+                justify-content: center !important;
+                padding-left: 0 !important;
+                padding-right: 0 !important;
+                margin-left: 0 !important;
+                margin-right: 0 !important;
+              }
+
+              /* Center header and footer content in compact mode */
+              [data-sidebar] [data-sidebar-header] > div,
+              [data-sidebar] [data-sidebar-footer] > div {
+                justify-content: center !important;
+              }
+
+              /* Hide badges in compact mode for cleaner look */
+              [data-sidebar] [data-sidebar="menu-badge"] {
+                display: none !important;
               }
             ` : ''}
 
